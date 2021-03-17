@@ -19,7 +19,7 @@ from chalicelib.env import store
 
 stage = store.mutation(
     'chalilce.stage', os.environ.get('STAGE', 'local'))
-appname = os.environ.get('APPNAME', 'wtbridge-apiv1')
+appname = os.environ.get('APPNAME', 'nuxt-chalice-api')
 app = store.mutation(
     'chalice.app', Chalice(app_name=appname))
 
@@ -57,8 +57,3 @@ store.mutation(
 
 # モジュール別のルーティングを追加
 from chalicelib.routes import auth, example  # noqa
-
-
-@app.route('/')
-def ping():
-    return {'hello': 'world'}
