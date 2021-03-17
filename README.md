@@ -71,7 +71,7 @@ $ yarn local
 
 - IDaaS として利用する Cognito UserPool を作成して、各種 ID / ARN を取得する
 - AWS Certificate Manager の **us-east-1** リージョンに
-  `cfntest.t-kigi.net` で利用可能な SSL 証明書を作成 (or インポート) して、その証明書の ARN を取得する
+  `nuxt-chalice-template.t-kigi.net` で利用可能な SSL 証明書を作成 (or インポート) して、その証明書の ARN を取得する
 - 新しい署名用の秘密鍵・公開鍵を作成する (ここでは、それぞれ cloudfront.pem, cloudfront.pub とする)
 - `cfn/s3andcloudfront.yaml` の EncodedKey の項目を、ここで作成した `resources/cloudfront.pub` の値に差し替える
 
@@ -128,7 +128,7 @@ Resources deployed:
 このとき、各パラメータに適切な値を入力する。
 
 - apiEndpointDomain: 手順1. で作成した Rest API URL のドメイン `**********.execute-api.ap-northeast-1.amazonaws.com` を入力する
-- applicationDomain: 本番用ドメインの `cfntest.t-kigi.net` を入力する
+- applicationDomain: 本番用ドメインの `nuxt-chalice-template.t-kigi.net` を入力する
 - certificateArn: 手順0. で準備した SSL 証明書の ARN を入力する
 - これ以外のパラメータはデフォルトでも良いが、変更したい場合はその値を利用する
 
@@ -140,7 +140,7 @@ CloudFormation による生成が成功すれば、デプロイ用のS3バケッ
 
 ### 3. DNSレコードの設定
 
-独自ドメインのレコード (ここでは `cfntest.t-kigi.net` ) を手順2. で作成した CDN のドメインに向ける。
+独自ドメインのレコード (ここでは `nuxt-chalice-template.t-kigi.net` ) を手順2. で作成した CDN のドメインに向ける。
 Route 53 を使っているのであれば、エイリアスレコードで、それ以外であれば CNAME レコードで CDN のドメインを指すようにして、
 構築したアプリケーションに準備したドメインでアクセスできるようにする。
 
@@ -168,7 +168,7 @@ $ cd nuxt
 $ aws s3 sync --delete dist/ s3://nuxt-chalice-hosting-prod-123456789012
 ```
 
-その後、ブラウザで `https://cfntest.t-kigi.net/` にアクセスすれば UI 部分が表示される。
+その後、ブラウザで `https://nuxt-chalice-template.t-kigi.net/` にアクセスすれば UI 部分が表示される。
 
 
 ## 備考
