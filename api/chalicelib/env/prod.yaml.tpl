@@ -1,7 +1,7 @@
 Config:
   # Profile: work
   Region: ap-northeast-1
-  FrontUrl: https://cfntest.t-kigi.net
+  FrontUrl: https://nuxt-chalice-template.t-kigi.net
   CloudFrontKeyId: *************
   CloudFrontKeyFile: chalicelib/env/cloudfront.pem
   UserPoolID: ap-northeast-1_***********

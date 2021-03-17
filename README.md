@@ -9,6 +9,11 @@ AWS 上でアプリケーションを公開する場合に利用することが�
 - Amazon Cognito UserPool を利用してユーザー管理を行う
 
 
+以下のURLで実際に公開しています。
+
+https://nuxt-chalice-template.t-kigi.net/
+
+
 ## ローカル環境の構築
 
 ### 0. 事前準備
@@ -58,7 +63,7 @@ $ yarn local
 
 ## AWS 環境へのデプロイ手順
 
-ここでは、本番のドメイン `cfntest.t-kigi.net` で公開するウェブアプリケーションを作成する例を紹介する。
+ここでは、本番のドメイン `nuxt-chalice-template.t-kigi.net` で公開するウェブアプリケーションを作成する例を紹介する。
 また、実行環境は Ubuntu 20.04 LTS である。
 
 

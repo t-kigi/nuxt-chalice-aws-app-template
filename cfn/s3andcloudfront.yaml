@@ -6,7 +6,7 @@ Parameters:
     Default: nuxt-chalice-app
   env:
     Type: String
-    Default: dev
+    Default: prod
   bucketName:
     Type: String
     Default: nuxt-chalice-hosting
