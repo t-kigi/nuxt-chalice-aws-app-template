@@ -260,15 +260,15 @@ Resources:
           - ErrorCachingMinTTL: 300
             ErrorCode: 400
             ResponseCode: 400
-            ResponsePagePath: /
+            ResponsePagePath: /errors/cushion.html
           - ErrorCachingMinTTL: 300
             ErrorCode: 403
             ResponseCode: 403
-            ResponsePagePath: /
+            ResponsePagePath: /errors/cushion.html
           - ErrorCachingMinTTL: 300
             ErrorCode: 404
             ResponseCode: 404
-            ResponsePagePath: /
+            ResponsePagePath: /errors/cushion.html
 Outputs:
   Region:
     Value: !Ref 'AWS::Region'
