@@ -33,6 +33,9 @@
             v-btn(color="success", large, block, @click="login")
                 v-icon(left)
                 | ログイン
+      div.text-center.github
+        a(href="https://github.com/t-kigi/nuxt-chalice-aws-app-template", target="_blank", rel="noopener noreferrer")
+          | Github はこちら
 
 </template>
 
@@ -157,5 +160,10 @@ div.top-title {
 
 div.button {
   margin-top: 2em;
+}
+
+div.github {
+  margin-top: 2rem;
+  font-size: 1.5rem;
 }
 </style>
