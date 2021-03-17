@@ -1,0 +1,33 @@
+{
+  "version": "2.0",
+  "app_name": "nuxt-chalice-api",
+  "environment_variables": {
+    "APPNAME": "nuxt-chalice-api"
+  },
+  "stages": {
+    "prod": {
+      "api_gateway_stage": "prod",
+      "autogen_policy": false,
+      "lambda_timeout": 30,
+      "lambda_memory_size": 256,
+      "environment_variables": {
+        "STAGE": "prod"
+      }
+    },
+    "dev": {
+      "api_gateway_stage": "dev",
+      "autogen_policy": false,
+      "lambda_timeout": 30,
+      "lambda_memory_size": 256,
+      "environment_variables": {
+        "APPNAME": "nuxt-chalice-api-dev",
+        "STAGE": "dev"
+      }
+    },
+    "local": {
+      "environment_variables": {
+        "STAGE": "local"
+      }
+    }
+  }
+}

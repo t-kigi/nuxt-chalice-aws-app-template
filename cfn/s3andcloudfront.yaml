@@ -1,0 +1,286 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Hosting resource S3 and CloudFront Deployment
+Parameters:
+  projectName:
+    Type: String
+    Default: nuxt-chalice-app
+  env:
+    Type: String
+    Default: dev
+  bucketName:
+    Type: String
+    Default: nuxt-chalice-hosting
+  pubkeyCallerReference:
+    Type: String
+    Default: 53fc25ad-9a6d-4e26-a332-56f1b62a479b
+  certificateArn:
+    Type: String
+  applicationDomain:
+    Type: String
+  apiEndpointDomain:
+    Type: String
+
+Conditions:
+  ShouldNotCreateEnvResources: !Equals
+    - !Ref 'env'
+    - NONE
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    Properties:
+      BucketName: !If
+        - ShouldNotCreateEnvResources
+        - !Ref 'bucketName'
+        - !Join
+          - '-'
+          - - !Ref 'bucketName'
+            - !Ref 'env'
+            - !Ref 'AWS::AccountId'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+  PrivateBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: OriginAccessIdentity
+    Properties:
+      PolicyDocument:
+        Id: MyPolicy
+        Version: '2012-10-17'
+        Statement:
+          - Sid: APIReadForGetBucketObjects
+            Effect: Allow
+            Principal:
+              CanonicalUser: !GetAtt 'OriginAccessIdentity.S3CanonicalUserId'
+            Action: s3:GetObject
+            Resource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - !Ref 'S3Bucket'
+                - /*
+      Bucket: !Ref 'S3Bucket'
+  OriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: CloudFrontOriginAccessIdentityConfig
+  CloudFrontPublicKey:
+    Type: AWS::CloudFront::PublicKey
+    Properties:
+      PublicKeyConfig:
+        Name: !Join
+          - '-'
+          - - !Ref 'projectName'
+            - !Ref 'env'
+        Comment: !Join
+          - ' '
+          - - !Ref 'projectName'
+            - public key
+        CallerReference: !Ref 'pubkeyCallerReference'
+        EncodedKey: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzE8O5sljFa19+2DxnohR
+          JiMWLj+Hg57uUNxi8EYHVpxRd/l7iMl9ETfSXOgIF2aNOQKn8I+xBofCMvPig83E
+          Fp5pRICapZnFTtlDZQXzs5dsfgmD4UKPSXZ4dljrGcok3Y1t6HkEF/waOPq7GV+Y
+          0DuqhbnXS2TWKEdXeB2xGwY9PBSfm+uJ2dZJJsaLPXpL7sRVz1vCF8xg3wZQwYPu
+          skBPNVQFV7fCAgWkpC1Wvb0I6J7pQxPlIOskiVqTmbkWIyuRURUUPIFsWwckAJnU
+          SSNnYNTu9RztYhMIRKSbehNqOGzyNUtMSQDaMbhSDCm3Pbzpe00TbUQ3Ak/tTXxF
+          qwIDAQAB
+          -----END PUBLIC KEY-----
+
+  CloudFrontKeyGroup:
+    Type: AWS::CloudFront::KeyGroup
+    DependsOn:
+      - CloudFrontPublicKey
+    Properties:
+      KeyGroupConfig:
+        Name: !Join
+          - '-'
+          - - !Ref 'projectName'
+            - !Ref 'env'
+        Comment: !Join
+          - ' '
+          - - !Ref 'projectName'
+            - signed key group
+        Items:
+          - !Ref 'CloudFrontPublicKey'
+  CloudFrontStaticCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Join
+          - '-'
+          - - !Ref 'projectName'
+            - static
+            - !Ref 'env'
+        DefaultTTL: 1
+        MaxTTL: 1
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: none
+          QueryStringsConfig:
+            QueryStringBehavior: whitelist
+            QueryStrings:
+              - v
+          CookiesConfig:
+            CookieBehavior: none
+  CloudFrontApiCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        Name: !Join
+          - '-'
+          - - !Ref 'projectName'
+            - api
+            - !Ref 'env'
+        DefaultTTL: 60
+        MaxTTL: 300
+        MinTTL: 0
+        ParametersInCacheKeyAndForwardedToOrigin:
+          EnableAcceptEncodingBrotli: true
+          EnableAcceptEncodingGzip: true
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Authorization
+              - CognitoAccessToken
+          QueryStringsConfig:
+            QueryStringBehavior: whitelist
+            QueryStrings:
+              - v
+          CookiesConfig:
+            CookieBehavior: none
+  CloudFrontApiOriginRequestPolicy:
+    Type: AWS::CloudFront::OriginRequestPolicy
+    Properties:
+      OriginRequestPolicyConfig:
+        Name: !Join
+          - '-'
+          - - !Ref 'projectName'
+            - api
+            - !Ref 'env'
+        CookiesConfig:
+          CookieBehavior: all
+        HeadersConfig:
+          HeaderBehavior: none
+        QueryStringsConfig:
+          QueryStringBehavior: all
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    DependsOn:
+      - S3Bucket
+      - OriginAccessIdentity
+      - CloudFrontKeyGroup
+      - CloudFrontStaticCachePolicy
+      - CloudFrontApiCachePolicy
+      - CloudFrontApiOriginRequestPolicy
+    Properties:
+      DistributionConfig:
+        HttpVersion: http2
+        Aliases:
+          - !Ref 'applicationDomain'
+        ViewerCertificate:
+          AcmCertificateArn: !Ref 'certificateArn'
+          MinimumProtocolVersion: TLSv1.2_2019
+          SslSupportMethod: sni-only
+        DefaultRootObject: index.html
+        Comment: !Join
+          - ' '
+          - - !Ref 'applicationDomain'
+            - !Ref 'env'
+        Origins:
+          # S3 のデフォルトドメイン s3.amazonaws.com は
+          # 最大で24時間程度反映されないことがあるので
+          # すぐに有効となるリージョン指定で対処する
+          - DomainName: !Join
+              - ''
+              - - !Ref 'bucketName'
+                - '-'
+                - !Ref 'env'
+                - '-'
+                - !Ref 'AWS::AccountId'
+                - '.s3-'
+                - !Ref 'AWS::Region'
+                - '.amazonaws.com'
+            Id: hostingS3Bucket
+            S3OriginConfig:
+              OriginAccessIdentity: !Join
+                - ''
+                - - origin-access-identity/cloudfront/
+                  - !Ref 'OriginAccessIdentity'
+          - Id: chalice-api
+            DomainName: !Ref 'apiEndpointDomain'
+            CustomOriginConfig:
+              OriginProtocolPolicy: https-only
+            OriginPath: !Join
+              - ''
+              - - /
+                - !Ref 'env'
+        Enabled: 'true'
+        PriceClass: PriceClass_200
+        CacheBehaviors:
+          - PathPattern: /m/*
+            AllowedMethods:
+              - GET
+              - HEAD
+            TargetOriginId: hostingS3Bucket
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: !Ref 'CloudFrontStaticCachePolicy'
+            Compress: true
+            TrustedKeyGroups:
+              - !Ref 'CloudFrontKeyGroup'
+          - PathPattern: /api/*
+            AllowedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            TargetOriginId: chalice-api
+            ViewerProtocolPolicy: redirect-to-https
+            CachePolicyId: !Ref 'CloudFrontApiCachePolicy'
+            OriginRequestPolicyId: !Ref 'CloudFrontApiOriginRequestPolicy'
+            Compress: true
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+          TargetOriginId: hostingS3Bucket
+          ViewerProtocolPolicy: redirect-to-https
+          CachePolicyId: !Ref 'CloudFrontStaticCachePolicy'
+          Compress: true
+        CustomErrorResponses:
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 400
+            ResponseCode: 400
+            ResponsePagePath: /
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 403
+            ResponseCode: 403
+            ResponsePagePath: /
+          - ErrorCachingMinTTL: 300
+            ErrorCode: 404
+            ResponseCode: 404
+            ResponsePagePath: /
+Outputs:
+  Region:
+    Value: !Ref 'AWS::Region'
+  HostingBucketName:
+    Description: Hosting bucket name
+    Value: !Ref 'S3Bucket'
+  CloudFrontDistributionID:
+    Value: !Ref 'CloudFrontDistribution'
+  CloudFrontDomainName:
+    Value: !GetAtt 'CloudFrontDistribution.DomainName'
+  CloudFrontSecureURL:
+    Value: !Join
+      - ''
+      - - https://
+        - !GetAtt 'CloudFrontDistribution.DomainName'
